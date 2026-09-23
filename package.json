@@ -1,0 +1,22 @@
+{
+  "name": "bwg-usage-api",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "build": "tsc",
+    "start": "node --env-file-if-exists=.env dist/index.js",
+    "check": "oxlint --fix . && oxfmt .",
+    "test": "pnpm build && node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.1.1",
+    "hono": "^4.13.8"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "oxfmt": "^0.70.0",
+    "oxlint": "^1.85.0",
+    "tsx": "^4.23.0",
+    "typescript": "^7.0.2"
+  }
+}
