@@ -18,9 +18,17 @@ docker compose up -d
 
 ```sh
 curl 'http://localhost:3000/?sub_token=example-token'
+# 只获取流量信息响应头
+curl -I 'http://localhost:3000/?sub_token=example-token'
 ```
 
-接口直接返回 KiwiVM 的 `getServiceInfo` 响应；令牌缺失或错误时返回 `401`。远程部署时，将 `localhost` 换成服务器地址。
+GET 接口返回 KiwiVM 的 `getServiceInfo` 响应；GET 和 HEAD 使用 `Bwg-Usage` 响应头携带流量信息，其值是包含 `data_counter`、`monthly_data_multiplier`、`plan_monthly_data`、`data_next_reset` 的 JSON 对象。仅包含上游 JSON 提供的有效字段，没有有效字段时省略该响应头。例如：
+
+```http
+Bwg-Usage: {"data_counter":123,"monthly_data_multiplier":1.5,"plan_monthly_data":456,"data_next_reset":1790812800}
+```
+
+HEAD 不返回响应体。令牌缺失或错误时返回 `401`。远程部署时，将 `localhost` 换成服务器地址。
 
 ## 开发命令
 

@@ -24,12 +24,46 @@ app.get("/", async (c) => {
       body: new URLSearchParams({ veid, api_key: apiKey }),
     });
 
-    return new Response(response.body, {
+    const body = response.body === null ? null : await response.text();
+    let data: unknown;
+    let isJson = false;
+    try {
+      data = JSON.parse(body ?? "");
+      isJson = true;
+    } catch {
+      // Forward non-JSON upstream responses as received.
+    }
+
+    const contentType = isJson ? "application/json" : response.headers.get("Content-Type");
+    const headers = new Headers();
+    if (contentType !== null) headers.set("Content-Type", contentType);
+
+    if (isJson && data !== null && typeof data === "object" && !Array.isArray(data)) {
+      const usage: Record<string, number | string> = {};
+      for (const name of [
+        "data_counter",
+        "monthly_data_multiplier",
+        "plan_monthly_data",
+        "data_next_reset",
+      ]) {
+        const value = (data as Record<string, unknown>)[name];
+        if (typeof value === "number" && Number.isFinite(value)) {
+          usage[name] = value;
+        } else if (typeof value === "string" && !/[\r\n]/.test(value)) {
+          usage[name] = value;
+        }
+      }
+      if (Object.keys(usage).length > 0) {
+        headers.set("Bwg-Usage", JSON.stringify(usage));
+      }
+    }
+
+    const result = new Response(body, {
       status: response.status,
-      headers: {
-        "Content-Type": response.headers.get("Content-Type") ?? "application/json",
-      },
+      headers,
     });
+    if (contentType === null) result.headers.delete("Content-Type");
+    return result;
   } catch {
     return c.json({ error: "Failed to reach BWG API" }, 502);
   }

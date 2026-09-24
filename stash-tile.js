@@ -20,7 +20,7 @@ const formatResetDate = (timestamp) => {
 if (!apiUrl) {
   finish("未配置 API URL");
 } else {
-  $httpClient.get(apiUrl, (error, response, data) => {
+  $httpClient.head(apiUrl, (error, response) => {
     if (error) {
       finish("获取流量失败");
       return;
@@ -32,29 +32,37 @@ if (!apiUrl) {
       return;
     }
 
-    let json;
+    const usageHeader = Object.entries(response?.headers ?? {}).find(
+      ([name]) => name.toLowerCase() === "bwg-usage",
+    )?.[1];
+    if (!usageHeader) {
+      finish("未返回流量数据");
+      return;
+    }
+
+    let usage;
     try {
-      json = JSON.parse(data);
+      usage = JSON.parse(usageHeader);
     } catch {
       finish("数据解析失败");
       return;
     }
 
-    if (json?.error !== 0) {
-      finish(`API Error ${json?.error}`);
+    if (usage === null || typeof usage !== "object" || Array.isArray(usage)) {
+      finish("流量数据异常");
       return;
     }
 
-    const used = Number(json.data_counter);
-    const multiplier = Number(json.monthly_data_multiplier);
-    const total = Number(json.plan_monthly_data) * (multiplier > 0 ? multiplier : 1);
+    const used = Number(usage.data_counter);
+    const multiplier = Number(usage.monthly_data_multiplier);
+    const total = Number(usage.plan_monthly_data) * (multiplier > 0 ? multiplier : 1);
 
     if (!Number.isFinite(used) || !Number.isFinite(total) || used < 0 || total <= 0) {
       finish("流量数据异常");
       return;
     }
 
-    const reset = formatResetDate(json.data_next_reset);
+    const reset = formatResetDate(usage.data_next_reset);
     const content = [`${formatGB(used)}/${formatGB(total)}`, reset && `${reset} 重置`]
       .filter(Boolean)
       .join("\n");
