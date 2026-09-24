@@ -6,8 +6,8 @@ const tile = {
 };
 
 const finish = (content) => $done({ ...tile, content });
-const formatGB = (bytes) => `${Number((bytes / 1024 ** 3).toFixed(2))} GB`;
 
+const formatGB = (bytes) => `${Number((bytes / 1024 ** 3).toFixed(2))} GB`;
 const formatResetDate = (timestamp) => {
   if (!timestamp) return "";
 
