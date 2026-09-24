@@ -1,4 +1,3 @@
-// stash 磁贴脚本
 var API = $argument;
 
 function showError(message) {
