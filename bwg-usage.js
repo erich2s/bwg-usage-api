@@ -2,26 +2,22 @@ var API = $argument;
 
 function showError(message) {
   $done({
-    title: 'BWG · 获取失败',
+    title: "BWG",
     content: message,
-    icon: 'exclamationmark.triangle.fill',
-    backgroundColor: '#FF3B30'
+    icon: "network",
+    backgroundColor: "#F02D55",
   });
 }
 
 function formatGB(bytes) {
   var gb = bytes / 1024 / 1024 / 1024;
 
-  if (Math.abs(gb - Math.round(gb)) < 0.01) {
-    return Math.round(gb) + ' GB';
-  }
-
-  return gb.toFixed(1) + ' GB';
+  return gb.toFixed(2) + " GB";
 }
 
 function formatResetDate(timestamp) {
   if (!timestamp) {
-    return '';
+    return "";
   }
 
   var date = new Date(timestamp * 1000);
@@ -29,28 +25,29 @@ function formatResetDate(timestamp) {
   var day = date.getDate();
 
   if (month < 10) {
-    month = '0' + month;
+    month = "0" + month;
   }
 
   if (day < 10) {
-    day = '0' + day;
+    day = "0" + day;
   }
 
-  return month + '/' + day;
+  return month + "/" + day;
 }
 
 if (!API) {
-  showError('未配置 API URL');
+  showError("未配置 API URL");
 } else {
   $httpClient.get(API, function (error, response, data) {
     if (error) {
-      showError('网络请求失败');
+      showError("获取流量失败");
       return;
     }
 
     if (!response || response.status !== 200) {
-      var status = response ? response.status : 'Unknown';
-      showError('HTTP ' + status);
+      var status = response ? response.status : "Unknown";
+
+      showError("HTTP " + status);
       return;
     }
 
@@ -58,71 +55,41 @@ if (!API) {
       var json = JSON.parse(data);
 
       if (json.error !== 0) {
-        showError('API Error ' + json.error);
+        showError("API Error " + json.error);
         return;
       }
 
       var used = Number(json.data_counter);
       var total = Number(json.plan_monthly_data);
+      var multiplier = Number(json.monthly_data_multiplier);
 
-      if (json.monthly_data_multiplier) {
-        total = total * Number(json.monthly_data_multiplier);
+      if (!multiplier || multiplier <= 0) {
+        multiplier = 1;
       }
 
-      if (
-        !isFinite(used) ||
-        !isFinite(total) ||
-        total <= 0
-      ) {
-        showError('流量数据异常');
+      total = total * multiplier;
+
+      if (!isFinite(used) || !isFinite(total) || used < 0 || total <= 0) {
+        showError("流量数据异常");
         return;
-      }
-
-      var remaining = total - used;
-
-      if (remaining < 0) {
-        remaining = 0;
-      }
-
-      var percent = used / total * 100;
-
-      var backgroundColor = '#007AFF';
-      var icon = 'network';
-
-      if (percent >= 90) {
-        backgroundColor = '#FF3B30';
-        icon = 'exclamationmark.triangle.fill';
-      } else if (percent >= 70) {
-        backgroundColor = '#FF9500';
       }
 
       var reset = formatResetDate(json.data_next_reset);
 
-      var title =
-        'BWG · ' +
-        formatGB(used) +
-        ' / ' +
-        formatGB(total) +
-        ' · ' +
-        percent.toFixed(0) +
-        '%';
-
-      var content =
-        '剩余 ' +
-        formatGB(remaining);
+      var content = formatGB(used) + "\n" + formatGB(total);
 
       if (reset) {
-        content += ' · ' + reset + ' 重置';
+        content += "\n" + reset + " 重置";
       }
 
       $done({
-        title: title,
+        title: "BWG",
         content: content,
-        icon: icon,
-        backgroundColor: backgroundColor
+        icon: "network",
+        backgroundColor: "#F02D55",
       });
-    } catch (e) {
-      showError('数据解析失败');
+    } catch {
+      showError("数据解析失败");
     }
   });
 }
