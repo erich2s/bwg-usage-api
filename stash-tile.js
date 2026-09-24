@@ -1,6 +1,6 @@
 const apiUrl = $argument?.trim();
 const tile = {
-  title: "BWG",
+  title: "数据用量",
   icon: "network",
   backgroundColor: "#F02D55",
 };
@@ -55,7 +55,7 @@ if (!apiUrl) {
     }
 
     const reset = formatResetDate(json.data_next_reset);
-    const content = [formatGB(used), formatGB(total), reset && `${reset} 重置`]
+    const content = [`${formatGB(used)}/${formatGB(total)}`, reset && `${reset} 重置`]
       .filter(Boolean)
       .join("\n");
 
